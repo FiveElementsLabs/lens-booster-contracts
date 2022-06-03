@@ -31,9 +31,6 @@ contract LensCampaign is Ownable {
         lensHub.mirror(vars);
     }
 
-    // Get value of mirror
-    function getMirrorValue() public view returns (uint256) {}
-
     // Fund the contract
     // Only who launches the campaign can do that
     function deposit(uint256 amount) external onlyOwner {
