@@ -82,6 +82,13 @@ contract LensCampaign is Ownable {
         );
         _;
     }
+    modifier onlyGov() {
+        require(
+            msg.sender == profileScore.governance(),
+            "LensCampaign::onlonlyGovyKeeper: Only governance can call this function"
+        );
+        _;
+    }
     modifier notExpired() {
         require(
             campaignDuration + startCampaign >= block.timestamp,
@@ -137,6 +144,34 @@ contract LensCampaign is Ownable {
             payedAddress[msg.sender] = true;
             payouts.leftPostPayout = newLeftPayout;
         }
+    }
+
+    function payForClick(address _toBePaid, uint256 click) external onlyGov {
+        require(
+            profileScore.addressesBooster(_toBePaid) != 0,
+            "LensCampaign::payForClick: Address not whitelisted"
+        );
+
+        uint256 payout = payouts.clickPayout * click;
+        (bool success, uint256 newLeftPayout) = _payout(
+            payout,
+            payouts.leftClickPayout
+        );
+        if (success) payouts.leftClickPayout = newLeftPayout;
+    }
+
+    function payForAction(address _toBePaid, uint256 nAction) external onlyGov {
+        require(
+            profileScore.addressesBooster(_toBePaid) != 0,
+            "LensCampaign::payForClick: Address not whitelisted"
+        );
+
+        uint256 payout = payouts.actionPayout * nAction;
+        (bool success, uint256 newLeftPayout) = _payout(
+            payout,
+            payouts.leftActionPayout
+        );
+        if (success) payouts.leftActionPayout = newLeftPayout;
     }
 
     ///@notice function that pays amount of the bugdet to the user
