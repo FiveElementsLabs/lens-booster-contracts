@@ -36,7 +36,7 @@ contract ProfileScore {
         onlyGov
     {
         require(
-            _score <= 10 && _score != 0,
+            _score <= 10,
             "ProfileScore::setUserScore: Score must be between 1 and 10"
         );
         addressesBooster[_addressToWhitelist] = _score;
