@@ -1,5 +1,5 @@
 {
-  "name": "LensBooster",
+  "name": "lens-booster-contracts",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
