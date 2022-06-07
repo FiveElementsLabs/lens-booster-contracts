@@ -10,35 +10,27 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 // A contract that points to a publication and pays for mirroring
 contract LensCampaign is Ownable {
-    // LensHubAddress Polygon
-    address public immutable lensHubAddress =
-        0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d;
-    ILensHub public lensHub;
-    // Denomination asset for payouts
-    ERC20 public immutable token;
-    // Publication id to be sponsored
-    uint256 public publicationId;
+    ///@dev LensHub Contract Polygon
+    ILensHub public constant LensHub =
+        ILensHub(0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d);
+    ///@dev Denomination asset for payouts
+    ERC20 public immutable rewardToken;
+    ///@dev Publication id to be sponsored
+    uint256 public immutable publicationId;
 
-    // constructor
-    constructor(ERC20 _asset) {
-        ILensHub lensHub = ILensHub(lensHubAddress);
-        token = _asset;
+    constructor(ERC20 _asset, uint256 _publicationId) public {
+        rewardToken = _asset;
+        publicationId = _publicationId;
     }
 
-    // Core functions
-    // Mirror publication external
+    ///@notice function that wrap mirror from lens, and pay for mirroring
     function mirrorWrapper(DataTypes.MirrorData calldata vars) external {
-        lensHub.mirror(vars);
+        LensHub.mirror(vars);
     }
 
-    // Fund the contract
-    // Only who launches the campaign can do that
+    ///@notice function to deposit funds to the campaign
+    ///@param amount amount of tokens to deposit
     function deposit(uint256 amount) external onlyOwner {
-        token.transferFrom(msg.sender, address(this), amount);
-    }
-
-    // Set publication id to be mirrored
-    function setPublication(uint256 id) external onlyOwner {
-        publicationId = id;
+        rewardToken.transferFrom(msg.sender, address(this), amount);
     }
 }
