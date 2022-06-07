@@ -13,3 +13,9 @@ npx hardhat node
 node scripts/sample-script.js
 npx hardhat help
 ```
+
+https://docs.lens.xyz/docs/functions
+https://polygonscan.com/address/0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d#writeProxyContract
+https://github.com/aave/lens-protocol/blob/main/contracts/libraries/PublishingLogic.sol
+
+https://github.com/aave/lens-protocol/blob/main/contracts/core/modules/collect/FreeCollectModule.sol
