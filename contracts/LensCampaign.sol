@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {DataTypes} from "./libraries/DataTypes.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// A contract that points to a publication and pays for mirroring a post
+// A contract that points to a publication and pays posts, clicks and events
 contract LensCampaign is Ownable {
     ///@dev LensHub Contract Polygon
     ILensHub public constant LensHub =
@@ -109,10 +109,11 @@ contract LensCampaign is Ownable {
     ///@notice function to withdraw funds from the campaign
     function withdrawBudget() external onlyOwner {
         require(
-            rewardToken.transfer(
-                address(this),
-                rewardToken.balanceOf(address(this))
-            ),
+            campaignDuration + startCampaign <= block.timestamp,
+            "LensCampaign::withdrawBudget: You can only withdraw when campaign is closed"
+        );
+        require(
+            rewardToken.transfer(owner(), rewardToken.balanceOf(address(this))),
             "LensCampaign::withdrawBudget: Cannot withdraw funds"
         );
         campaignDuration = 0;
@@ -127,7 +128,7 @@ contract LensCampaign is Ownable {
     ) external onlyWhitelisted notExpired {
         require(
             payedAddress[msg.sender] == false,
-            "LensCampaing::handlePost: Post already payed"
+            "LensCampaing::handlePost: Post already posted"
         );
 
         uint256 pubId = LensHub.postWithSig(postData);
@@ -146,13 +147,13 @@ contract LensCampaign is Ownable {
         }
     }
 
-    function payForClick(address _toBePaid, uint256 click) external onlyGov {
+    function payForClick(address _toBePaid, uint256 nClick) external onlyGov {
         require(
             profileScore.addressesBooster(_toBePaid) != 0,
             "LensCampaign::payForClick: Address not whitelisted"
         );
 
-        uint256 payout = payouts.clickPayout * click;
+        uint256 payout = payouts.clickPayout * nClick;
         (bool success, uint256 newLeftPayout) = _payout(
             payout,
             payouts.leftClickPayout

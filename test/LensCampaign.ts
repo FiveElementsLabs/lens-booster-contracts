@@ -88,33 +88,6 @@ describe("LensCampaign", function () {
   describe("LensCampaign mirrors", function () {
     it("should mirror a post", async function () {
       const beforePublications = await LensHub.getPubCount(12212);
-      // Trying to mirror any post
-      await LensHub.connect(advertiser).mirror({
-        profileId: 12212, //giaco.lens profileId
-        profileIdPointed: 306, //luduvigo.lens profileId
-        pubIdPointed: 87, //luduvigo.lens pubId
-        referenceModuleData: "0x0000000000000000000000000000000000000000",
-        referenceModule: "0x0000000000000000000000000000000000000000",
-        referenceModuleInitData: "0x0000000000000000000000000000000000000000",
-      });
-      /* await LensHub.connect(advertiser).post({
-        profileId: 12212,
-        contentURI: "",
-        collectModule: "0x23b9467334beb345aaa6fd1545538f3d54436e96",
-        collectModuleInitData: "0x0000000000000000000000000000000000000000",
-        referenceModule: "0x0000000000000000000000000000000000000000",
-        referenceModuleInitData: "0x0000000000000000000000000000000000000000",
-      }); */
-      /* uint256 profileId: 12212;
-        string contentURI: https://ipfs.infura.io/ipfs/Qmaa3zzd6QAtGsVVuVEJhKZDHbYNKp5gh7s5tJva2ZhsRM;
-        address collectModule: 0x23b9467334beb345aaa6fd1545538f3d54436e96;
-        bytes collectModuleInitData: "0x0000000000000000000000000000000000000000";
-        address referenceModule: "0x0000000000000000000000000000000000000000";
-        bytes referenceModuleInitData: "0x0000000000000000000000000000000000000000" */
-      const afterPublications = await LensHub.getPubCount(12212);
-      expect(beforePublications.toNumber()).to.be.equal(
-        afterPublications.toNumber() - 1
-      );
     });
 
     it("Should check if post is success and payout the amount for it", async function () {
@@ -122,11 +95,6 @@ describe("LensCampaign", function () {
       // We create a new ipfs with different links
       // Create postWithSig
       // Payout user
-
-      expect(publicationURI.content.includes("https://www.google.it")).to.be
-        .true;
-
-      //call handleMirror with the post
     });
 
     it("should withdraw liquidity", async function () {});
