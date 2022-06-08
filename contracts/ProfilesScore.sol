@@ -7,7 +7,7 @@ pragma solidity ^0.8.10;
  */
 
 contract ProfileScore {
-    address governance;
+    address public governance;
 
     mapping(address => uint256) public addressesBooster;
 
@@ -20,7 +20,7 @@ contract ProfileScore {
     }
 
     ///@notice modifier to check if the caller is the governance
-    modifier onlyOwner() {
+    modifier onlyGov() {
         require(
             msg.sender == governance,
             "ProfileScore::onlyOwner: Only governance can call this function"
@@ -28,33 +28,23 @@ contract ProfileScore {
         _;
     }
 
-    ///@notice modifier to check if an address is whitelisted
-    ///@param _address address to check
-    modifier isWhitelisted(address _address) {
-        require(
-            addressesBooster[_address] != 0,
-            "ProfileScore::isWhitelisted: Address not whitelisted"
-        );
-        _;
-    }
-
     ///@notice function that add user to whitelist, with is score
     ///@param _addressToWhitelist address to add to whitelist
     ///@param _score score of the address added in whitelist
-    function addUser(address _addressToWhitelist, uint256 _score)
+    function setUserScore(address _addressToWhitelist, uint256 _score)
         external
-        onlyOwner
+        onlyGov
     {
         require(
-            _score <= 10 && _score != 0,
-            "ProfileScore::addUser: Score must be between 1 and 10"
+            _score <= 10,
+            "ProfileScore::setUserScore: Score must be between 1 and 10"
         );
         addressesBooster[_addressToWhitelist] = _score;
     }
 
     ///@notice function to change governance address
     ///@param _governance new governance address
-    function changeGovernance(address _governance) external onlyOwner {
+    function changeGovernance(address _governance) external onlyGov {
         require(
             _governance != address(0),
             "ProfileScore::changeGovernance: new governance cannot be 0"

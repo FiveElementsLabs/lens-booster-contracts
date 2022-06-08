@@ -4,39 +4,57 @@ import { Contract } from "ethers";
 import { expect } from "chai";
 import "mocha";
 const ERC20Json = require("@openzeppelin/contracts/build/contracts/ERC20.json");
+const LensHubJson = require("../contracts/abis/LensHub.json");
 // Connect to the network
 let provider = ethers.getDefaultProvider();
 
 describe("LensCampaign", function () {
   let advertiser: any;
-  let userWithoutProfile: any;
-  let usdcMock: any;
+  let user: any;
   let lensCampaign: Contract;
   let USDC: Contract;
+  let LensHub: Contract;
+  const publicationURI = {
+    version: "1.0.0",
+    metadata_id: "855d5934-6ce4-4247-b4d7-e2c1b07b48b3",
+    description: "inside this the link of redirect\nhttps://www.google.it/",
+    content: "inside this the link of redirect\nhttps://www.google.it/",
+    external_url: null,
+    image: null,
+    imageMimeType: null,
+    name: "Post by @giaco.lens",
+    attributes: [{ traitType: "string", key: "type", value: "post" }],
+    media: [],
+    appId: "Lenster",
+  };
 
   before("Creating all environment", async function () {
-    // lens profile five elements 0x7dcb4f75FF612Cf94E0b918160cbE55bE1C7b97d
+    // lens profile five elements 0x7d06dE4aE53Ef27Fff2B34731C97bb44FD27D9E6 giaco.lens
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: ["0x7dcb4f75FF612Cf94E0b918160cbE55bE1C7b97d"],
+      params: ["0x7d06dE4aE53Ef27Fff2B34731C97bb44FD27D9E6"],
     });
-    const advertiser = await ethers.getSigner(
-      "0x7dcb4f75FF612Cf94E0b918160cbE55bE1C7b97d"
+    advertiser = await ethers.getSigner(
+      "0x7d06dE4aE53Ef27Fff2B34731C97bb44FD27D9E6"
     );
 
-    // lens profile user 0x30b0EAe5e9Df8a1C95dFdB7AF86aa4e7F3B51f13
+    // lens profile user 0x30b0EAe5e9Df8a1C95dFdB7AF86aa4e7F3B51f13 luduvigo.lens
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: ["0x30b0EAe5e9Df8a1C95dFdB7AF86aa4e7F3B51f13"],
     });
-    const user = await ethers.getSigner(
-      "0x30b0EAe5e9Df8a1C95dFdB7AF86aa4e7F3B51f13"
+    user = await ethers.getSigner("0x30b0EAe5e9Df8a1C95dFdB7AF86aa4e7F3B51f13");
+
+    LensHub = await ethers.getContractAt(
+      "ILensHub",
+      "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d"
     );
 
     // Advertiser deploys Campaign
     const LensCampaignFactory = await ethers.getContractFactory("LensCampaign");
     lensCampaign = await LensCampaignFactory.connect(advertiser).deploy(
-      "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+      "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+      "12345"
     );
     await lensCampaign.deployed();
     // Approving USDC for advertiser
@@ -60,25 +78,24 @@ describe("LensCampaign", function () {
     const usdcProvider = await ethers.getSigner(
       "0xCAb72c950D3971baF129392edF644A6cB4A18be1"
     );
-    /*
-    await USDC.connect(usdcProvider).transfer(advertiser.address, 2000e6);
+
+    /* await USDC.connect(usdcProvider).transfer(advertiser.address, 2000e6);
 
     // Funding the campaign
-    await lensCampaign.connect(advertiser).deposit(100e6);
-
-    // Trying to mirror any post
-    await lensCampaign.connect(advertiser).mirrorWrapper({
-      profileId: 7700,
-      profileIdPointed: 452,
-      pubIdPointed: 4,
-      referenceModuleData: "0x",
-      referenceModule: "0x0000000000000000000000000000000000000000",
-      referenceModuleInitData: "0x",
-    });*/
+    await lensCampaign.connect(advertiser).deposit(100e6); */
   });
 
   describe("LensCampaign mirrors", function () {
-    it("Advertiser should fund the campaign", async function () {});
+    it("should mirror a post", async function () {
+      const beforePublications = await LensHub.getPubCount(12212);
+    });
+
+    it("Should check if post is success and payout the amount for it", async function () {
+      // User sign a tx
+      // We create a new ipfs with different links
+      // Create postWithSig
+      // Payout user
+    });
 
     it("should withdraw liquidity", async function () {});
   });

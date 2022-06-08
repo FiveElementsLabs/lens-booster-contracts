@@ -1,15 +1,7 @@
-# Basic Sample Hardhat Project
+# LENS BOOSTER
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+We believe Web3 Social Media is going to take off and become the future of how people interact on the internet and advertising will surely play a crucial role in this evolution.
+With LensBooster, we want to:
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+- Democratize the advertising market on web3
+- Be part of this potentially huge opportunity
