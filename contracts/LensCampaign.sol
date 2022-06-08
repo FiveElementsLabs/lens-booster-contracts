@@ -26,7 +26,6 @@ contract LensCampaign is Ownable {
     ///@dev Duration campaign in seconds
     uint256 public campaignDuration;
     uint256 public immutable startCampaign;
-
     mapping(address => bool) private payedAddress;
 
     ///@dev payout amount
@@ -119,10 +118,8 @@ contract LensCampaign is Ownable {
     }
 
     ///@notice function that wrap post from lens, and pay for post
-    ///@param profileId profileId of the user
     ///@param postData post data to be send to LensHub
     function handlePost(
-        uint256 profileId,
         DataTypes.PostWithSigData calldata postData
     ) external onlyWhitelisted notExpired {
         require(

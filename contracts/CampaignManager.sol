@@ -5,11 +5,12 @@ pragma solidity ^0.8.10;
 /**
  * @title Contract that saves profiles and scores
  */
+import "hardhat/console.sol";
 
-contract ProfileScore {
+contract CampaignManager {
     address public governance;
 
-    mapping(address => uint256) public addressesBooster;
+    mapping(uint256 => uint256) public idBooster;
 
     constructor(address _governance) public {
         require(
@@ -29,17 +30,19 @@ contract ProfileScore {
     }
 
     ///@notice function that add user to whitelist, with is score
-    ///@param _addressToWhitelist address to add to whitelist
+    ///@param _idToWhitelist address to add to whitelist
     ///@param _score score of the address added in whitelist
-    function setUserScore(address _addressToWhitelist, uint256 _score)
+    function setUserScore(uint256 _idToWhitelist, uint256 _score)
         external
         onlyGov
     {
+        console.log("%s",_idToWhitelist);
+        console.log("%s", _score);
         require(
-            _score <= 10 && _score != 0,
+            _score <= 100,
             "ProfileScore::setUserScore: Score must be between 1 and 10"
         );
-        addressesBooster[_addressToWhitelist] = _score;
+        idBooster[_idToWhitelist] = _score;
     }
 
     ///@notice function to change governance address
