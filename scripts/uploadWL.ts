@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import fetch from 'cross-fetch';
 import { config as dotenvConfig } from "dotenv";
 import { resolve } from "path";
-//import  addresses  from "./addresses"; //for mainnet de-comment it 
+//import  { addressCampaignManager }  from "./addresses"; //for mainnet de-comment it 
 import abiCampaignManagerJson from "../artifacts/contracts/CampaignManager.sol/CampaignManager.json"; 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
@@ -32,7 +32,7 @@ async function main() {
   //commentend for local development
   /* 
   const campaignManager = new Contract(    //checkthis
-    addresses.CampaignManager, 
+    addressCampaignManager, 
     abiCampaignManager[abi],
     wallet
   );
@@ -54,11 +54,11 @@ async function main() {
 
 
   //upload
-  for (let i = 1; i < array.length; i++) {
+  for (let i = 1; i < 4; i++) {
     
     let id = array[i].split(",")[0]; 
-    let score = Number(array[i].split(",")[1])*100; 
-    //console.log(array[i]);
+    let score = Number(Number(array[i].split(",")[1])*100).toFixed(0); 
+    console.log(array[i]);
 
     await campaignManager.connect(account).setUserScore(id, score, {
         gasPrice,
