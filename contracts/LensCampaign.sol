@@ -30,6 +30,8 @@ contract LensCampaign is Ownable {
     mapping(uint256 => bool) private payedProfile;
     ///@dev profileId - clickCounts
     mapping (uint256 => uint256) private clickCounts;
+    ///@dev profileId - actionCounts
+    mapping (uint256 => uint256) private actionCounts;
 
     ///@dev payout amounts
     struct PayoutType {
@@ -174,11 +176,18 @@ contract LensCampaign is Ownable {
         }
     }
 
-    ///@notice function that increment the count of the click obtained by one inflenser
+    ///@notice function that increment the count of the clicks obtained by one inflenser
     ///@param _profileId profile id of the inflenser
-    function redirectOnClick (uint256 _profileId) external onlyGov 
+    function handleClick (uint256 _profileId) external onlyGov 
     {
         clickCounts[_profileId]++;
+    }
+
+    ///@notice function that increment the count of the actions obtained by one inflenser
+    ///@param _profileId profile id of the inflenser
+    function handleAction (uint256 _profileId) external onlyGov 
+    {
+        actionCounts[_profileId]++;
     }
 
     ///@notice function called by the keeper for pay for clicks
@@ -191,7 +200,7 @@ contract LensCampaign is Ownable {
         );
         require(
             clickCounts[_toBePaid]>=click,
-            "LensCampaign:payForClick: the number of clicks to pay is greater than the counter"
+            "LensCampaign::payForClick: the number of clicks to pay is greater than the counter"
         );
         uint256 payout = payouts.clickPayout * click;
         (bool success, uint256 newLeftPayout) = _payout(
@@ -211,9 +220,12 @@ contract LensCampaign is Ownable {
     function payForAction(uint256 _toBePaid, uint256 nAction) external onlyGov {
         require(
             campaignManager.idBooster(_toBePaid) != 0,
-            "LensCampaign::payForClick: Address not whitelisted"
+            "LensCampaign::payForAction: Address not whitelisted"
         );
-
+        require(
+            actionCounts[_toBePaid]>=nAction,
+            "LensCampaign::payForAction: the number of actions to pay is greater than the counter"
+        );
         uint256 payout = payouts.actionPayout * nAction;
         (bool success, uint256 newLeftPayout) = _payout(
             payout,
@@ -221,7 +233,7 @@ contract LensCampaign is Ownable {
         );
         if (success){
             payouts.leftActionPayout = newLeftPayout;
-            emit ClickPayed(userId, _toBePaid, payout, nAction);
+            emit ActionPayed(userId, _toBePaid, payout, nAction);
         }           
     }
 
