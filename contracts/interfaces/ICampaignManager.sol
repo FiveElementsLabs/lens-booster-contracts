@@ -6,8 +6,8 @@ pragma solidity ^0.8.10;
  * @title Contract that saves profiles and scores
  */
 
-interface IProfileScore {
+interface ICampaignManager {
     function governance() external returns (address _governance);
 
-    function addressesBooster(address) external returns (uint256);
+    function idBooster(uint256) external returns (uint256);
 }
