@@ -17,6 +17,7 @@ contract CampaignManager {
     mapping(uint256 => uint256) public idBooster;
     ///@dev UserIdAdd - PubIdAd - AddressCampaignAd
     mapping(uint256 => mapping(uint256=>address)) public addressesCampaign;
+    address[] public addressesCampaignAd;
 
     ///@notice fired when a new campaign is created
     ///@param campaign the address of the campaign created
@@ -95,6 +96,7 @@ contract CampaignManager {
             "CampaignManager::createCampaign: campaign not created"
         );
         addressesCampaign[_userId][_publicationId]=address(campaign);
+        addressesCampaignAd.push(address(campaign));
 
         emit CampaignCreated(address(campaign), _userId);
     }

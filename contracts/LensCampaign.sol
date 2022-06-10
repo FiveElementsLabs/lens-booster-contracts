@@ -1,16 +1,14 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.10;
 
-import "hardhat/console.sol";
 import "./interfaces/ILensHub.sol";
 import "./interfaces/ICampaignManager.sol";
-import "hardhat/console.sol";
 import {ERC20} from "./libraries/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {DataTypes} from "./libraries/DataTypes.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// A contract that points to a publication and pays for mirroring a post
+// A contract that points to a publication and pays posts, clicks and events
 contract LensCampaign is Ownable {
     ///@dev LensHub Contract Polygon
     ILensHub public constant LensHub =
@@ -26,6 +24,8 @@ contract LensCampaign is Ownable {
     ///@dev Duration campaign in seconds
     uint256 public campaignDuration;
     uint256 public immutable startCampaign;
+    ///@dev Store address of a profileId
+    mapping(uint256 => address) public addressLensProfile;
     ///@dev profileId - bool
     mapping(uint256 => bool) private payedProfile;
     ///@dev profileId - clickCounts
@@ -137,10 +137,11 @@ contract LensCampaign is Ownable {
     ///@notice function to withdraw funds from the campaign
     function withdrawBudget() external onlyOwner {
         require(
-            rewardToken.transfer(
-                address(this),
-                rewardToken.balanceOf(address(this))
-            ),
+            campaignDuration + startCampaign <= block.timestamp,
+            "LensCampaign::withdrawBudget: You can only withdraw when campaign is closed"
+        );
+        require(
+            rewardToken.transfer(owner(), rewardToken.balanceOf(address(this))),
             "LensCampaign::withdrawBudget: Cannot withdraw funds"
         );
         campaignDuration = 0;
@@ -157,6 +158,7 @@ contract LensCampaign is Ownable {
         require(
             payedProfile[_profileId] == false,
             "LensCampaing::handlePost: Post already payed"
+
         );
 
         uint256 pubId = LensHub.postWithSig(postData);
@@ -167,12 +169,15 @@ contract LensCampaign is Ownable {
             campaignManager.idBooster(_profileId));
         (bool success, uint256 newLeftPayout) = _payout(
             payout,
-            payouts.leftPostPayout
+            payouts.leftPostPayout,
+            msg.sender
         );
         if (success) {
             payedProfile[_profileId] = true;
             payouts.leftPostPayout = newLeftPayout;
             emit PostPayed(userId, _profileId, payout);
+
+            addressLensProfile[_profileId] = msg.sender;
         }
     }
 
@@ -192,25 +197,27 @@ contract LensCampaign is Ownable {
 
     ///@notice function called by the keeper for pay for clicks
     ///@param _toBePaid profile id of the inflenser
-    ///@param click number of clicks for the payment
-    function payForClick(uint256 _toBePaid, uint256 click) external onlyGov {
+    ///@param nClick number of clicks for the payment
+    function payForClick(uint256 _toBePaid, uint256 nClick) external onlyGov {
+
         require(
             campaignManager.idBooster(_toBePaid) != 0,
             "LensCampaign::payForClick: Address not whitelisted"
         );
         require(
-            clickCounts[_toBePaid]>=click,
+            clickCounts[_toBePaid]>=nClick,
             "LensCampaign::payForClick: the number of clicks to pay is greater than the counter"
         );
-        uint256 payout = payouts.clickPayout * click;
+        uint256 payout = payouts.clickPayout * nClick;
+
         (bool success, uint256 newLeftPayout) = _payout(
             payout,
             payouts.leftClickPayout
         );
         if (success){
-            clickCounts[_toBePaid]-=click;
+            clickCounts[_toBePaid]-=nClick;
             payouts.leftClickPayout = newLeftPayout;
-            emit ClickPayed(userId, _toBePaid, payout, click);
+            emit ClickPayed(userId, _toBePaid, payout, nClick);
         } 
     }
 
@@ -232,6 +239,7 @@ contract LensCampaign is Ownable {
             payouts.leftActionPayout
         );
         if (success){
+             actionCounts[_toBePaid] -= nAction;
             payouts.leftActionPayout = newLeftPayout;
             emit ActionPayed(userId, _toBePaid, payout, nAction);
         }           
@@ -240,7 +248,7 @@ contract LensCampaign is Ownable {
     ///@notice function that pays amount of the bugdet to the user
     ///@param amountToPay amount of tokens to pay
     ///@param leftPayout amount of tokens left to be used
-    function _payout(uint256 amountToPay, uint256 leftPayout)
+    function _payout(uint256 amountToPay, uint256 leftPayout, address _addressToBePaid)
         internal
         notExpired
         returns (bool, uint256)
@@ -251,9 +259,8 @@ contract LensCampaign is Ownable {
         );
 
         require(
-            rewardToken.transferFrom(
-                address(this),
-                msg.sender,
+            rewardToken.transfer(
+                _addressToBePaid,
                 amountToPay <= leftPayout ? amountToPay : leftPayout
             ),
             "LensCampaign::_payoutPost: Transfer failed"
