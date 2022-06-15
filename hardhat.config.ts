@@ -32,11 +32,5 @@ export default {
         url: "https://polygon-mainnet.g.alchemy.com/v2/OPgFJmubIEHEVanbQZQTswXK98J2vu8C",
       },
     },
-    polygon: {
-      url: "https://polygon-mainnet.g.alchemy.com/v2/OPgFJmubIEHEVanbQZQTswXK98J2vu8C",
-      accounts: [
-        "063b6d5c1358b3689dd713f0b9be34c8858ca95a26e4031a803ec30f5936cf18",
-      ],
-    },
   },
 };

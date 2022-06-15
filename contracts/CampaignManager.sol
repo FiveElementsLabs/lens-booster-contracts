@@ -8,12 +8,11 @@ import "./mocked/LensCampaignMocked.sol";
 /**
  * @title Contract that saves profiles and scores
  */
-import "hardhat/console.sol";
 
 contract CampaignManager {
     address public governance;
     ///@dev ProfileId - Score
-    mapping(uint256 => uint256) public idBooster;
+    mapping(uint256 => uint256) public inflencerId;
     ///@dev UserIdAdd - PubIdAd - AddressCampaignAd
     mapping(uint256 => mapping(uint256 => address)) public addressesCampaign;
     address[] public addressesCampaignAd;
@@ -51,7 +50,7 @@ contract CampaignManager {
             _score <= 1000,
             "ProfileScore::setUserScore: Score must be between 1 and 10"
         );
-        idBooster[_idToWhitelist] = _score;
+        inflencerId[_idToWhitelist] = _score;
     }
 
     ///@notice function for create a campaign
@@ -67,8 +66,8 @@ contract CampaignManager {
     ///@param _maxActionPayout budget of payouts per action
     function createCampaign(
         ERC20 _asset,
+        uint256 _adProfileId,
         uint256 _publicationId,
-        uint256 _userId,
         uint256 _campaingDuration,
         uint256 _postPayout,
         uint256 _maxPostPayout,
@@ -81,8 +80,8 @@ contract CampaignManager {
             msg.sender,
             _asset,
             address(this),
+            _adProfileId,
             _publicationId,
-            _userId,
             _campaingDuration,
             _postPayout,
             _maxPostPayout,
@@ -95,7 +94,7 @@ contract CampaignManager {
             address(campaign) != address(0),
             "CampaignManager::createCampaign: campaign not created"
         );
-        addressesCampaign[_userId][_publicationId] = address(campaign);
+        addressesCampaign[_adProfileId][_publicationId] = address(campaign);
         addressesCampaignAd.push(address(campaign));
 
         emit CampaignCreated(address(campaign), _userId);

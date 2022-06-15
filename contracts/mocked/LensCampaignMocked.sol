@@ -7,35 +7,7 @@ import {ERC20} from "../libraries/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {DataTypes} from "../libraries/DataTypes.sol";
 
-// A contract that points to a publication and pays posts, clicks and events
-contract LensCampaignMocked {
-    address public owner;
-
-    ///@dev LensHub Contract Polygon
-    ILensHub public constant LensHub =
-        ILensHub(0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d);
-    ///@dev Denomination asset for payouts
-    ERC20 public immutable rewardToken;
-    ///@dev Publication id to be sponsored
-    uint256 public immutable publicationId;
-    ///@dev Lens UserId
-    uint256 public immutable userId;
-    ///@dev Profile score contract
-    ICampaignManager public immutable campaignManager;
-    ///@dev Duration campaign in seconds
-    uint256 public campaignDuration;
-    uint256 public immutable startCampaign;
-    ///@dev Store address of a profileId
-    mapping(uint256 => address) public addressLensProfile;
-    ///@dev profileId - bool
-    mapping(uint256 => bool) private payedProfile;
-    ///@dev profileId - clickCounts
-    mapping(uint256 => uint256) private clickCounts;
-    ///@dev profileId - actionCounts
-    mapping(uint256 => uint256) private actionCounts;
-    ///@dev userId posted
-    uint256[] public userIdPosted;
-
+interface ILensCampaign {
     ///@dev payout amounts
     struct PayoutType {
         uint256 postPayout;
@@ -49,44 +21,78 @@ contract LensCampaignMocked {
         uint256 leftActionPayout;
     }
 
-    PayoutType public payouts;
+    ///@dev Save basic campaign information
 
-    ///@notice fired when a post is handled
-    ///@param userId the id profile of the ad
-    ///@param profileId the id profile of inflenser
-    ///@param payout the payout of the post
-    event PostPayed(uint256 userId, uint256 profileId, uint256 payout);
+    struct CampaignInfo {
+        ///@dev Publication id to be sponsored
+        uint256 publicationId;
+        ///@dev Lens UserId of the advertiser
+        uint256 adProfileId;
+        ///@dev Duration campaign in seconds
+        uint256 campaignDuration;
+        ///@dev timestamp in seconds when the campaign starts
+        uint256 startCampaign;
+    }
 
-    ///@notice fired when clicks are payed
-    ///@param userId the id profile of the ad
-    ///@param profileId the id profile of inflenser
-    ///@param payout the payout of the click
-    ///@param clicks number of clicks payed
-    event ClickPayed(
-        uint256 userId,
-        uint256 profileId,
-        uint256 payout,
-        uint256 clicks
-    );
+    ///@dev Inflensers stats
+    struct InflensersInfo {
+        ///@dev Store address of users by profileID
+        mapping(uint256 => address) addressLensProfile;
+        ///@dev profileId - bool - true if the profile is already payed for the post
+        mapping(uint256 => bool) payedProfile;
+        ///@dev userId that have posted the campaign
+        uint256[] userIdPosted;
+    }
+    struct ToBePayed {
+        ///@dev profileId - clickCounts to be payed
+        mapping(uint256 => uint256) clickCountsToBePayed;
+        ///@dev profileId - actionCounts to be payed
+        mapping(uint256 => uint256) actionCountsToBePayed;
+    }
 
-    ///@notice fired when actions are payed
-    ///@param userId the id profile of the ad
-    ///@param profileId the id profile of inflenser
-    ///@param payout the payout of the actions
-    ///@param nActions number of actions payed
-    event ActionPayed(
-        uint256 userId,
-        uint256 profileId,
-        uint256 payout,
-        uint256 nActions
-    );
+    struct AlreadyPayed {
+        ///@dev profileId - clickCounts already payed
+        mapping(uint256 => uint256) clickCountsAlreadyPayed;
+        ///@dev profileId - actionCounts to be payed
+        mapping(uint256 => uint256) actionCountsAlreadyPayed;
+    }
+
+    ///@dev MAIN INFLENSER
+    struct Inflenser {
+        InflensersInfo inflensersInfo;
+        ToBePayed toBePayed;
+        AlreadyPayed alreadyPayed;
+    }
+
+    ///@dev MAIN CAMPAIGN
+    struct Campaign {
+        CampaignInfo campaignInfo;
+        PayoutType payouts;
+    }
+}
+
+// A contract that points to a publication and pays posts, clicks and events
+contract LensCampaignMocked {
+    ///@dev Owner of the contract (who deploys it)
+    address public owner;
+    ///@dev LensHub Contract Polygon
+    ILensHub public constant LensHub =
+        ILensHub(0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d);
+    ///@dev Denomination asset for payouts
+    ERC20 public immutable rewardToken;
+    ///@dev Manager that start the campaign and users score
+    ICampaignManager public immutable campaignManager;
+
+    ///@dev Main Storage
+    Campaign public campaign;
+    Inflenser public inflenser;
 
     constructor(
         address _owner,
         ERC20 _asset,
         address _campaignManager,
+        uint256 _adProfileId,
         uint256 _publicationId,
-        uint256 _userId,
         uint256 _campaingDuration,
         uint256 _postPayout,
         uint256 _maxPostPayout,
@@ -97,26 +103,26 @@ contract LensCampaignMocked {
     ) {
         owner = _owner;
         rewardToken = _asset;
-        publicationId = _publicationId;
         campaignManager = ICampaignManager(_campaignManager);
-        userId = _userId;
-        campaignDuration = _campaingDuration;
-        payouts.postPayout = _postPayout;
-        payouts.maxPostPayout = _maxPostPayout;
-        payouts.leftPostPayout = _maxPostPayout;
-        payouts.clickPayout = _clickPayout;
-        payouts.maxClickPayout = _maxClickPayout;
-        payouts.leftClickPayout = _maxClickPayout;
-        payouts.actionPayout = _actionPayout;
-        payouts.maxActionPayout = _maxActionPayout;
-        payouts.leftActionPayout = _maxActionPayout;
-        startCampaign = block.timestamp;
+        campaign.campaignInfo.adProfileId = _adProfileId;
+        campaign.campaignInfo.publicationId = _publicationId;
+        campaign.campaignInfo.campaignDuration = _campaingDuration;
+        campaign.payouts.postPayout = _postPayout;
+        campaign.payouts.maxPostPayout = _maxPostPayout;
+        campaign.payouts.leftPostPayout = _maxPostPayout;
+        campaign.payouts.clickPayout = _clickPayout;
+        campaign.payouts.maxClickPayout = _maxClickPayout;
+        campaign.payouts.leftClickPayout = _maxClickPayout;
+        campaign.payouts.actionPayout = _actionPayout;
+        campaign.payouts.maxActionPayout = _maxActionPayout;
+        campaign.payouts.leftActionPayout = _maxActionPayout;
+        campaign.campaignInfo.startCampaign = block.timestamp;
     }
 
     ///@notice modifier to check if an address is whitelisted
     modifier onlyWhitelisted(uint256 _profileId) {
         require(
-            campaignManager.idBooster(_profileId) != 0,
+            campaignManager.inflencerId(_profileId) != 0,
             "LensCampaign::onlyWhitelisted: UserId not whitelisted"
         );
         _;
@@ -139,20 +145,12 @@ contract LensCampaignMocked {
     ///@notice modifier to check if the campaign is not expired
     modifier notExpired() {
         require(
-            campaignDuration + startCampaign >= block.timestamp,
+            campaign.campaignInfo.campaignDuration +
+                campaign.campaignInfo.startCampaign >=
+                block.timestamp,
             "LensCampaign::notExpired: Time expired for campaign"
         );
         _;
-    }
-
-    function modifyLeftPayout(
-        uint256 leftPost,
-        uint256 leftClick,
-        uint256 leftAction
-    ) external onlyOwner {
-        payouts.leftPostPayout = leftPost;
-        payouts.leftClickPayout = leftClick;
-        payouts.leftActionPayout = leftAction;
     }
 
     ///@notice function to deposit funds to the campaign
@@ -167,14 +165,15 @@ contract LensCampaignMocked {
     ///@notice function to withdraw funds from the campaign
     function withdrawBudget() external onlyOwner {
         require(
-            campaignDuration + startCampaign <= block.timestamp,
+            campaign.campaignInfo.campaignDuration +
+                campaign.campaignInfo.startCampaign <=
+                block.timestamp,
             "LensCampaign::withdrawBudget: You can only withdraw when campaign is closed"
         );
         require(
             rewardToken.transfer(owner, rewardToken.balanceOf(address(this))),
             "LensCampaign::withdrawBudget: Cannot withdraw funds"
         );
-        campaignDuration = 0;
     }
 
     ///@notice function that wrap post from lens, and pay for post
@@ -185,7 +184,7 @@ contract LensCampaignMocked {
         DataTypes.PostWithSigData calldata postData
     ) external onlyWhitelisted(_profileId) notExpired {
         require(
-            payedProfile[_profileId] == false,
+            inflenser.inflenserInfo.payedProfile[_profileId] == false,
             "LensCampaing::handlePost: Post already payed"
         );
 
@@ -193,73 +192,85 @@ contract LensCampaignMocked {
 
         require(pubId != 0, "LensCampaing::handlePost:Post not accepted");
 
-        userIdPosted.push(_profileId);
-    }
+        (bool success, uint256 newLeftPayout) = _payout(
+            campaign.payouts.postPayout *
+                campaignManager.inflencerId(_profileId),
+            campaign.payouts.leftPostPayout,
+            msg.sender
+        );
 
-    function modifyProfileArray(uint256 _profileId) external onlyOwner {
-        userIdPosted.push(_profileId);
+        if (success) {
+            inflenser.inflenserInfo.payedProfile[_profileId] = true;
+            inflenser.inflenserInfo.userIdPosted.push(_profileId);
+            campaign.payouts.leftPostPayout = newLeftPayout;
+
+            inflenser.inflenserInfo.addressLensProfile[_profileId] = msg.sender;
+        }
     }
 
     ///@notice function that increment the count of the clicks obtained by one inflenser
     ///@param _profileId profile id of the inflenser
     function handleClick(uint256 _profileId) external onlyGov {
-        clickCounts[_profileId]++;
+        inflenser.toBePayed.clickCountsToBePayed[_profileId]++;
     }
 
     ///@notice function that increment the count of the actions obtained by one inflenser
     ///@param _profileId profile id of the inflenser
     function handleAction(uint256 _profileId) external onlyGov {
-        actionCounts[_profileId]++;
+        inflenser.toBePayed.actionCountsToBePayed[_profileId]++;
     }
 
     ///@notice function called by the keeper for pay for clicks
     ///@param _toBePaid profile id of the inflenser
     ///@param nClick number of clicks for the payment
-    function payForClick(uint256 _toBePaid, uint256 nClick) external onlyGov {
+    function payForClick(uint256 _toBePaid, uint256 nClick)
+        external
+        onlyGov
+        onlyWhitelisted(_toBePaid)
+    {
         require(
-            campaignManager.idBooster(_toBePaid) != 0,
-            "LensCampaign::payForClick: Address not whitelisted"
-        );
-        require(
-            clickCounts[_toBePaid] >= nClick,
+            inflenser.toBePayed.clickCountsToBePayed[_toBePaid] >= nClick,
             "LensCampaign::payForClick: the number of clicks to pay is greater than the counter"
         );
-        uint256 payout = payouts.clickPayout * nClick;
 
         (bool success, uint256 newLeftPayout) = _payout(
-            payout,
-            payouts.leftClickPayout,
-            addressLensProfile[_toBePaid]
+            campaign.payouts.clickPayout * nClick,
+            campaign.payouts.leftClickPayout,
+            inflenser.inflenserInfo.addressLensProfile[_toBePaid]
         );
+
         if (success) {
-            clickCounts[_toBePaid] -= nClick;
-            payouts.leftClickPayout = newLeftPayout;
-            emit ClickPayed(userId, _toBePaid, payout, nClick);
+            inflenser.toBePayed.clickCountsToBePayed[_toBePaid] -= nClick;
+            inflenser.alreadyPayed.clickCountsAlreadyPayed[_toBePaid] += nClick;
+            campaign.payouts.leftClickPayout = newLeftPayout;
         }
     }
 
     ///@notice function called by the keeper for pay for actions
     ///@param _toBePaid profile id of the inflenser
     ///@param nAction number of actions for the payment
-    function payForAction(uint256 _toBePaid, uint256 nAction) external onlyGov {
+    function payForAction(uint256 _toBePaid, uint256 nAction)
+        external
+        onlyGov
+        onlyWhitelisted(_toBePaid)
+    {
         require(
-            campaignManager.idBooster(_toBePaid) != 0,
-            "LensCampaign::payForAction: Address not whitelisted"
-        );
-        require(
-            actionCounts[_toBePaid] >= nAction,
+            inflenser.oBePayed.actionCountsToBePayed[_toBePaid] >= nAction,
             "LensCampaign::payForAction: the number of actions to pay is greater than the counter"
         );
-        uint256 payout = payouts.actionPayout * nAction;
+
         (bool success, uint256 newLeftPayout) = _payout(
-            payout,
-            payouts.leftActionPayout,
-            addressLensProfile[_toBePaid]
+            campaign.payouts.actionPayout * nAction,
+            campaign.payouts.leftActionPayout,
+            inflenser.inflenserInfo.addressLensProfile[_toBePaid]
         );
+
         if (success) {
-            actionCounts[_toBePaid] -= nAction;
-            payouts.leftActionPayout = newLeftPayout;
-            emit ActionPayed(userId, _toBePaid, payout, nAction);
+            inflenser.oBePayed.actionCountsToBePayed[_toBePaid] -= nAction;
+            inflenser.alreadyPayed.actionCountsAlreadyPayed[
+                _toBePaid
+            ] += nAction;
+            campaign.payouts.leftActionPayout = newLeftPayout;
         }
     }
 
@@ -284,5 +295,33 @@ contract LensCampaignMocked {
             "LensCampaign::_payoutPost: Transfer failed"
         );
         return (true, amountToPay <= leftPayout ? leftPayout - amountToPay : 0);
+    }
+
+    ///@dev mocked version only
+    function modifyLeftPayout(
+        uint256 leftPost,
+        uint256 leftClick,
+        uint256 leftAction
+    ) external onlyOwner {
+        campaign.payouts.leftPostPayout = leftPost;
+        campaign.payouts.leftClickPayout = leftClick;
+        campaign.payouts.leftActionPayout = leftAction;
+    }
+
+    function modifyProfileArray(uint256 _profileId) external onlyOwner {
+        inflenser.inflenserInfo.userIdPosted.push(_profileId);
+        inflenser.inflenserInfo.payedProfile[_profileId] = true;
+    }
+
+    ///@notice function that increment the count of the clicks obtained by one inflenser
+    ///@param _profileId profile id of the inflenser
+    function handleClickMocked(uint256 _profileId) external onlyGov {
+        inflenser.alreadyPayed.clickCountsAlreadyPayed[_profileId]++;
+    }
+
+    ///@notice function that increment the count of the actions obtained by one inflenser
+    ///@param _profileId profile id of the inflenser
+    function handleActionMocked(uint256 _profileId) external onlyGov {
+        inflenser.alreadyPayed.actionCountsAlreadyPayed[_profileId]++;
     }
 }

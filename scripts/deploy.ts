@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
 
 const hre = require("hardhat");
 
@@ -13,6 +14,8 @@ async function main() {
   //     "0xD5B48F2a649F315D1e2A7F95Ed807aeA2de84947"
   //   );
   await Manager.deployed();
+
+  console.log(await Manager.governance());
   const tx = await Manager.createCampaign(
     "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // asset address
     "0x03ff", // pubId
@@ -28,9 +31,14 @@ async function main() {
   console.log("tx: ", tx.hash);
   await tx.wait();
   console.log(await Manager.addressesCampaignAd(0));
+  return {
+    campaign: await Manager.addressesCampaignAd(0),
+    manager: Manager.address,
+  };
 }
 
-async function setStatsRand(campaignAddress: any) {
+async function setStatsRand(res: any) {
+  const campaignAddress = res.campaign;
   const accounts = await hre.ethers.getSigners();
   const deployer = accounts[0];
   let nonce = await ethers.provider.getTransactionCount(deployer.address);
@@ -41,24 +49,29 @@ async function setStatsRand(campaignAddress: any) {
   );
 
   let tx;
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 5; i++) {
     tx = await Campaing.modifyProfileArray(i, { nonce, gasLimit: 2000000 });
     console.log("modifyProfileArray", tx.hash);
     await tx.wait();
     console.log(`Adding ${i} to campaing. Nonce: ${nonce}`);
     nonce++;
-    nonce = await addClicks(2, Campaing, i, nonce);
+    nonce = await addClicks(Math.ceil(Math.random() * 100), Campaing, i, nonce);
 
-    nonce = await addActions(2, Campaing, i, nonce);
+    nonce = await addActions(
+      Math.ceil(Math.random() * 100),
+      Campaing,
+      i,
+      nonce
+    );
   }
-}
+  console.log("Campaign: ", Campaing.address);
+  console.log("Manager: ", res.manager);
 
-setStatsRand("0xF48B5f5Ce3EEDbe73723373Eeeeffba2c8Def660")
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+  return {
+    campaign: Campaing.address,
+    manager: res.address,
+  };
+}
 
 const addClicks = async (
   nClicks: any,
@@ -96,15 +109,31 @@ const addActions = async (
   return nonce;
 };
 
-// const test = async () => {
-//   const accounts = await hre.ethers.getSigners();
-//   const deployer = accounts[0];
+main()
+  .then((res) => setStatsRand(res))
+  .then(() => test());
 
-//   const Campaing = await ethers.getContractAt(
-//     "LensCampaignMocked",
-//     "0x551277f0d5F51bC5149EbDe595c8963b9D074f15"
-//   );
+/*setStatsRand({
+  campaign: "0x74315519D80D3a0bF18EF867D691f6c9c4fAc669",
+  manager: "0x00000000",
+})*/
+const test = async () => {
+  const accounts = await hre.ethers.getSigners();
+  const deployer = accounts[0];
 
-//   console.log(await Campaing.owner());
-// };
-// test();
+  const CampaignManager = await ethers.getContractAt(
+    "CampaignManager",
+    "0xD0798f8308EFE28516C36D5d0dC31f68fD8D0d05",
+    deployer
+  );
+
+  const Campaign = await ethers.getContractAt(
+    "LensCampaignMocked",
+    "0xdD994D28CEd09916F60eb36d4692fDC679998276",
+    deployer
+  );
+  await Campaign.handleClick(18);
+  console.log(await CampaignManager.governance());
+
+  console.log(await Campaign.owner());
+};
