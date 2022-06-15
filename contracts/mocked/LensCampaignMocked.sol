@@ -1,15 +1,16 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.10;
 
-import "./interfaces/ILensHub.sol";
-import "./interfaces/ICampaignManager.sol";
-import {ERC20} from "./libraries/ERC20.sol";
+import "../interfaces/ILensHub.sol";
+import "../interfaces/ICampaignManager.sol";
+import {ERC20} from "../libraries/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {DataTypes} from "./libraries/DataTypes.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {DataTypes} from "../libraries/DataTypes.sol";
 
 // A contract that points to a publication and pays posts, clicks and events
-contract LensCampaign is Ownable {
+contract LensCampaignMocked {
+    address public owner;
+
     ///@dev LensHub Contract Polygon
     ILensHub public constant LensHub =
         ILensHub(0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d);
@@ -32,6 +33,8 @@ contract LensCampaign is Ownable {
     mapping(uint256 => uint256) private clickCounts;
     ///@dev profileId - actionCounts
     mapping(uint256 => uint256) private actionCounts;
+    ///@dev userId posted
+    uint256[] public userIdPosted;
 
     ///@dev payout amounts
     struct PayoutType {
@@ -79,6 +82,7 @@ contract LensCampaign is Ownable {
     );
 
     constructor(
+        address _owner,
         ERC20 _asset,
         address _campaignManager,
         uint256 _publicationId,
@@ -91,6 +95,7 @@ contract LensCampaign is Ownable {
         uint256 _actionPayout,
         uint256 _maxActionPayout
     ) {
+        owner = _owner;
         rewardToken = _asset;
         publicationId = _publicationId;
         campaignManager = ICampaignManager(_campaignManager);
@@ -117,6 +122,11 @@ contract LensCampaign is Ownable {
         _;
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "LensCampaign::onlyOwner: Only owner");
+        _;
+    }
+
     ///@notice modifier to check if the caller is the gov
     modifier onlyGov() {
         require(
@@ -135,6 +145,16 @@ contract LensCampaign is Ownable {
         _;
     }
 
+    function modifyLeftPayout(
+        uint256 leftPost,
+        uint256 leftClick,
+        uint256 leftAction
+    ) external onlyOwner {
+        payouts.leftPostPayout = leftPost;
+        payouts.leftClickPayout = leftClick;
+        payouts.leftActionPayout = leftAction;
+    }
+
     ///@notice function to deposit funds to the campaign
     ///@param amount amount of tokens to deposit
     function depositBudget(uint256 amount) external onlyOwner notExpired {
@@ -151,7 +171,7 @@ contract LensCampaign is Ownable {
             "LensCampaign::withdrawBudget: You can only withdraw when campaign is closed"
         );
         require(
-            rewardToken.transfer(owner(), rewardToken.balanceOf(address(this))),
+            rewardToken.transfer(owner, rewardToken.balanceOf(address(this))),
             "LensCampaign::withdrawBudget: Cannot withdraw funds"
         );
         campaignDuration = 0;
@@ -173,20 +193,11 @@ contract LensCampaign is Ownable {
 
         require(pubId != 0, "LensCampaing::handlePost:Post not accepted");
 
-        uint256 payout = (payouts.postPayout *
-            campaignManager.idBooster(_profileId));
-        (bool success, uint256 newLeftPayout) = _payout(
-            payout,
-            payouts.leftPostPayout,
-            msg.sender
-        );
-        if (success) {
-            payedProfile[_profileId] = true;
-            payouts.leftPostPayout = newLeftPayout;
-            emit PostPayed(userId, _profileId, payout);
+        userIdPosted.push(_profileId);
+    }
 
-            addressLensProfile[_profileId] = msg.sender;
-        }
+    function modifyProfileArray(uint256 _profileId) external onlyOwner {
+        userIdPosted.push(_profileId);
     }
 
     ///@notice function that increment the count of the clicks obtained by one inflenser

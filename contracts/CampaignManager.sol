@@ -3,7 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {ERC20} from "./libraries/ERC20.sol";
-import "./LensCampaign.sol";
+import "./mocked/LensCampaignMocked.sol";
 
 /**
  * @title Contract that saves profiles and scores
@@ -11,12 +11,11 @@ import "./LensCampaign.sol";
 import "hardhat/console.sol";
 
 contract CampaignManager {
-
     address public governance;
     ///@dev ProfileId - Score
     mapping(uint256 => uint256) public idBooster;
     ///@dev UserIdAdd - PubIdAd - AddressCampaignAd
-    mapping(uint256 => mapping(uint256=>address)) public addressesCampaign;
+    mapping(uint256 => mapping(uint256 => address)) public addressesCampaign;
     address[] public addressesCampaignAd;
 
     ///@notice fired when a new campaign is created
@@ -78,29 +77,29 @@ contract CampaignManager {
         uint256 _actionPayout,
         uint256 _maxActionPayout
     ) external {
-        LensCampaign campaign = new LensCampaign(
-         _asset,
-         address(this),
-         _publicationId,
-         _userId,
-         _campaingDuration,
-         _postPayout,
-         _maxPostPayout,
-         _clickPayout,
-         _maxClickPayout,
-         _actionPayout,
-         _maxActionPayout
-         );
-        require (
-            address(campaign)!=address(0),
+        LensCampaignMocked campaign = new LensCampaignMocked(
+            msg.sender,
+            _asset,
+            address(this),
+            _publicationId,
+            _userId,
+            _campaingDuration,
+            _postPayout,
+            _maxPostPayout,
+            _clickPayout,
+            _maxClickPayout,
+            _actionPayout,
+            _maxActionPayout
+        );
+        require(
+            address(campaign) != address(0),
             "CampaignManager::createCampaign: campaign not created"
         );
-        addressesCampaign[_userId][_publicationId]=address(campaign);
+        addressesCampaign[_userId][_publicationId] = address(campaign);
         addressesCampaignAd.push(address(campaign));
 
         emit CampaignCreated(address(campaign), _userId);
     }
-
 
     ///@notice function to change governance address
     ///@param _governance new governance address
@@ -111,6 +110,4 @@ contract CampaignManager {
         );
         governance = _governance;
     }
-
-
 }
