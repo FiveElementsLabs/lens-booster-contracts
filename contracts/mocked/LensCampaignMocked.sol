@@ -32,6 +32,8 @@ interface ILensCampaign {
         uint256 campaignDuration;
         ///@dev timestamp in seconds when the campaign starts
         uint256 startCampaign;
+        ///@dev campaign title
+        string campaignTitle;
     }
 
     ///@dev Inflensers stats
@@ -40,6 +42,8 @@ interface ILensCampaign {
         mapping(uint256 => address) addressLensProfile;
         ///@dev profileId - bool - true if the profile is already payed for the post
         mapping(uint256 => bool) payedProfile;
+        ///@dev profileId - postId - track the postId of the post payed for
+        mapping(uint256 => uint256) postId;
         
     }
     struct ToBePayed {
@@ -83,19 +87,11 @@ contract LensCampaignMocked is ILensCampaign {
     ICampaignManager public immutable campaignManager;
 
      ///@dev userId that have posted the campaign
-    uint256[] userIdPosted;
+    uint256[] public userIdPosted;
 
     Inflenser private inflenser;
     Campaign private campaign;
     
-   
-
-     
-     
-    
-     
-     
-     
 
     constructor(
         address _owner,
@@ -176,21 +172,24 @@ contract LensCampaignMocked is ILensCampaign {
      
      ///@dev return 1- address of inflenser, 2- if profileId is already payed
      function getInflenserInfo(uint256 inflencerId) public view returns (address,
-         bool
+         bool, uint256
         ) {
         return (inflenser.inflensersInfo.addressLensProfile[inflencerId],
-            inflenser.inflensersInfo.payedProfile[inflencerId]);
+            inflenser.inflensersInfo.payedProfile[inflencerId],
+            inflenser.inflensersInfo.postId[inflencerId]);
      }
 
 
      function getCampaignInfo() public view returns (uint256 ,
         uint256 ,
         uint256 ,
-        uint256) {
+        uint256,
+        string memory) {
         return (campaign.campaignInfo.publicationId,
         campaign.campaignInfo.adProfileId,
         campaign.campaignInfo.campaignDuration,
-        campaign.campaignInfo.startCampaign);
+        campaign.campaignInfo.startCampaign,
+        campaign.campaignInfo.campaignTitle);
 
         }
 
@@ -377,6 +376,7 @@ contract LensCampaignMocked is ILensCampaign {
     function modifyProfileArray(uint256 _profileId) external onlyOwner {
        userIdPosted.push(_profileId);
         inflenser.inflensersInfo.payedProfile[_profileId] = true;
+        inflenser.inflensersInfo.postId[_profileId] = 9;
     }
 
     ///@notice function that increment the count of the clicks obtained by one inflenser

@@ -31,8 +31,21 @@ async function main() {
   console.log("tx: ", tx.hash);
   await tx.wait();
   console.log(await Manager.addressesCampaignAd(0));
+  const tx2 = await Manager.createCampaign(
+    "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // asset address
+    "0x03ff", // pubId
+    "0x03", // userId
+    2e6, // duration
+    1, // post payout
+    1000, // max post payout
+    1, // click payout
+    1000, // max click payout
+    1, // action payout
+    1000 // max action payout
+  );
+  await tx2.wait();
   return {
-    campaign: await Manager.addressesCampaignAd(0),
+    campaign: [await Manager.addressesCampaignAd(0), await Manager.addressesCampaignAd(1)],
     manager: Manager.address,
   };
 }
@@ -43,9 +56,11 @@ async function setStatsRand(res: any) {
   const deployer = accounts[0];
   let nonce = await ethers.provider.getTransactionCount(deployer.address);
 
-  const Campaing = await ethers.getContractAt(
+  for(let i = 0 ; i< campaignAddress.length; i++)
+  {
+    const Campaing = await ethers.getContractAt(
     "LensCampaignMocked",
-    campaignAddress
+    campaignAddress[i]
   );
 
   let tx;
@@ -63,12 +78,11 @@ async function setStatsRand(res: any) {
       i,
       nonce
     );
-  }
-  console.log("Campaign: ", Campaing.address);
+  }}
   console.log("Manager: ", res.manager);
 
   return {
-    campaign: Campaing.address,
+    campaign: campaignAddress,
     manager: res.address,
   };
 }
