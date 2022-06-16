@@ -111,7 +111,7 @@ contract LensCampaign is Ownable {
     ///@notice modifier to check if an address is whitelisted
     modifier onlyWhitelisted(uint256 _profileId) {
         require(
-            campaignManager.idBooster(_profileId) != 0,
+            campaignManager.inflencerId(_profileId) != 0,
             "LensCampaign::onlyWhitelisted: UserId not whitelisted"
         );
         _;
@@ -174,7 +174,7 @@ contract LensCampaign is Ownable {
         require(pubId != 0, "LensCampaing::handlePost:Post not accepted");
 
         uint256 payout = (payouts.postPayout *
-            campaignManager.idBooster(_profileId));
+            campaignManager.inflencerId(_profileId));
         (bool success, uint256 newLeftPayout) = _payout(
             payout,
             payouts.leftPostPayout,
@@ -206,7 +206,7 @@ contract LensCampaign is Ownable {
     ///@param nClick number of clicks for the payment
     function payForClick(uint256 _toBePaid, uint256 nClick) external onlyGov {
         require(
-            campaignManager.idBooster(_toBePaid) != 0,
+            campaignManager.inflencerId(_toBePaid) != 0,
             "LensCampaign::payForClick: Address not whitelisted"
         );
         require(
@@ -232,7 +232,7 @@ contract LensCampaign is Ownable {
     ///@param nAction number of actions for the payment
     function payForAction(uint256 _toBePaid, uint256 nAction) external onlyGov {
         require(
-            campaignManager.idBooster(_toBePaid) != 0,
+            campaignManager.inflencerId(_toBePaid) != 0,
             "LensCampaign::payForAction: Address not whitelisted"
         );
         require(

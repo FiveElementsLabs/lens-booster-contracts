@@ -40,8 +40,7 @@ interface ILensCampaign {
         mapping(uint256 => address) addressLensProfile;
         ///@dev profileId - bool - true if the profile is already payed for the post
         mapping(uint256 => bool) payedProfile;
-        ///@dev userId that have posted the campaign
-        uint256[] userIdPosted;
+        
     }
     struct ToBePayed {
         ///@dev profileId - clickCounts to be payed
@@ -72,7 +71,7 @@ interface ILensCampaign {
 }
 
 // A contract that points to a publication and pays posts, clicks and events
-contract LensCampaignMocked {
+contract LensCampaignMocked is ILensCampaign {
     ///@dev Owner of the contract (who deploys it)
     address public owner;
     ///@dev LensHub Contract Polygon
@@ -83,9 +82,20 @@ contract LensCampaignMocked {
     ///@dev Manager that start the campaign and users score
     ICampaignManager public immutable campaignManager;
 
-    ///@dev Main Storage
-    Campaign public campaign;
-    Inflenser public inflenser;
+     ///@dev userId that have posted the campaign
+    uint256[] userIdPosted;
+
+    Inflenser private inflenser;
+    Campaign private campaign;
+    
+   
+
+     
+     
+    
+     
+     
+     
 
     constructor(
         address _owner,
@@ -153,6 +163,62 @@ contract LensCampaignMocked {
         _;
     }
 
+
+    ///@dev return 1- click already payed, 2- action already payed
+    function getInflenserPayed(uint256 _profileId) public view returns (uint256, uint256) {
+        return (inflenser.alreadyPayed.clickCountsAlreadyPayed[_profileId], inflenser.alreadyPayed.actionCountsAlreadyPayed[_profileId]);
+     }
+
+    ///@dev return 1- clicks to be payed, 2- actions to be payed
+     function getInflenserToBePayed(uint256 _profileId) public view returns (uint256, uint256)  {
+        return (inflenser.toBePayed.clickCountsToBePayed[_profileId], inflenser.toBePayed.actionCountsToBePayed[_profileId]);
+     }
+     
+     ///@dev return 1- address of inflenser, 2- if profileId is already payed
+     function getInflenserInfo(uint256 inflencerId) public view returns (address,
+         bool
+        ) {
+        return (inflenser.inflensersInfo.addressLensProfile[inflencerId],
+            inflenser.inflensersInfo.payedProfile[inflencerId]);
+     }
+
+
+     function getCampaignInfo() public view returns (uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256) {
+        return (campaign.campaignInfo.publicationId,
+        campaign.campaignInfo.adProfileId,
+        campaign.campaignInfo.campaignDuration,
+        campaign.campaignInfo.startCampaign);
+
+        }
+
+        function getPayouts() public view returns (uint256 ,
+        uint256,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ) {
+        return (
+            campaign.payouts.postPayout,
+            campaign.payouts.maxPostPayout,
+            campaign.payouts.leftPostPayout,
+            campaign.payouts.clickPayout,
+            campaign.payouts.maxClickPayout,
+            campaign.payouts.leftClickPayout,
+            campaign.payouts.actionPayout,
+            campaign.payouts.maxActionPayout,
+            campaign.payouts.leftActionPayout
+        );
+        
+    }
+
+
+
     ///@notice function to deposit funds to the campaign
     ///@param amount amount of tokens to deposit
     function depositBudget(uint256 amount) external onlyOwner notExpired {
@@ -184,7 +250,7 @@ contract LensCampaignMocked {
         DataTypes.PostWithSigData calldata postData
     ) external onlyWhitelisted(_profileId) notExpired {
         require(
-            inflenser.inflenserInfo.payedProfile[_profileId] == false,
+            inflenser.inflensersInfo.payedProfile[_profileId] == false,
             "LensCampaing::handlePost: Post already payed"
         );
 
@@ -200,11 +266,11 @@ contract LensCampaignMocked {
         );
 
         if (success) {
-            inflenser.inflenserInfo.payedProfile[_profileId] = true;
-            inflenser.inflenserInfo.userIdPosted.push(_profileId);
+            inflenser.inflensersInfo.payedProfile[_profileId] = true;
+           userIdPosted.push(_profileId);
             campaign.payouts.leftPostPayout = newLeftPayout;
 
-            inflenser.inflenserInfo.addressLensProfile[_profileId] = msg.sender;
+            inflenser.inflensersInfo.addressLensProfile[_profileId] = msg.sender;
         }
     }
 
@@ -236,7 +302,7 @@ contract LensCampaignMocked {
         (bool success, uint256 newLeftPayout) = _payout(
             campaign.payouts.clickPayout * nClick,
             campaign.payouts.leftClickPayout,
-            inflenser.inflenserInfo.addressLensProfile[_toBePaid]
+            inflenser.inflensersInfo.addressLensProfile[_toBePaid]
         );
 
         if (success) {
@@ -255,18 +321,18 @@ contract LensCampaignMocked {
         onlyWhitelisted(_toBePaid)
     {
         require(
-            inflenser.oBePayed.actionCountsToBePayed[_toBePaid] >= nAction,
+            inflenser.toBePayed.actionCountsToBePayed[_toBePaid] >= nAction,
             "LensCampaign::payForAction: the number of actions to pay is greater than the counter"
         );
 
         (bool success, uint256 newLeftPayout) = _payout(
             campaign.payouts.actionPayout * nAction,
             campaign.payouts.leftActionPayout,
-            inflenser.inflenserInfo.addressLensProfile[_toBePaid]
+            inflenser.inflensersInfo.addressLensProfile[_toBePaid]
         );
 
         if (success) {
-            inflenser.oBePayed.actionCountsToBePayed[_toBePaid] -= nAction;
+            inflenser.toBePayed.actionCountsToBePayed[_toBePaid] -= nAction;
             inflenser.alreadyPayed.actionCountsAlreadyPayed[
                 _toBePaid
             ] += nAction;
@@ -297,7 +363,7 @@ contract LensCampaignMocked {
         return (true, amountToPay <= leftPayout ? leftPayout - amountToPay : 0);
     }
 
-    ///@dev mocked version only
+    ///@dev mocked version only -------------------------------------------------------------------------------
     function modifyLeftPayout(
         uint256 leftPost,
         uint256 leftClick,
@@ -309,8 +375,8 @@ contract LensCampaignMocked {
     }
 
     function modifyProfileArray(uint256 _profileId) external onlyOwner {
-        inflenser.inflenserInfo.userIdPosted.push(_profileId);
-        inflenser.inflenserInfo.payedProfile[_profileId] = true;
+       userIdPosted.push(_profileId);
+        inflenser.inflensersInfo.payedProfile[_profileId] = true;
     }
 
     ///@notice function that increment the count of the clicks obtained by one inflenser

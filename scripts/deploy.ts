@@ -81,7 +81,7 @@ const addClicks = async (
 ) => {
   let tx;
   for (let i = 0; i < nClicks; i++) {
-    tx = await Campaing.handleClick(profileId, { nonce, gasLimit: 2000000 });
+    tx = await Campaing.handleClickMocked(profileId, { nonce, gasLimit: 2000000 });
     console.log("handleClick", tx.hash);
     await tx.wait();
     console.log(`Adding to ${profileId}: ${nClicks} clicks. Nonce: ${nonce}`);
@@ -98,7 +98,7 @@ const addActions = async (
 ) => {
   let tx;
   for (let i = 0; i < nActions; i++) {
-    tx = await Campaing.handleAction(profileId, { nonce, gasLimit: 2000000 });
+    tx = await Campaing.handleActionMocked(profileId, { nonce, gasLimit: 2000000 });
     console.log("handleAction", tx.hash);
     await tx.wait();
     console.log(`Adding to ${profileId}: ${nActions} clicks. Nonce: ${nonce}`);
@@ -111,25 +111,26 @@ const addActions = async (
 
 main()
   .then((res) => setStatsRand(res))
-  .then(() => test());
+  .then((res) => test(res));
 
 /*setStatsRand({
   campaign: "0x74315519D80D3a0bF18EF867D691f6c9c4fAc669",
   manager: "0x00000000",
 })*/
-const test = async () => {
+const test = async (res: any) => {
   const accounts = await hre.ethers.getSigners();
   const deployer = accounts[0];
+  console.log(res)
 
   const CampaignManager = await ethers.getContractAt(
     "CampaignManager",
-    "0xD0798f8308EFE28516C36D5d0dC31f68fD8D0d05",
+    res.manager,
     deployer
   );
 
   const Campaign = await ethers.getContractAt(
     "LensCampaignMocked",
-    "0xdD994D28CEd09916F60eb36d4692fDC679998276",
+    res.campaign,
     deployer
   );
   await Campaign.handleClick(18);

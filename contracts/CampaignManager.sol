@@ -55,8 +55,8 @@ contract CampaignManager {
 
     ///@notice function for create a campaign
     ///@param _asset reward token
+    ///@param _adProfileId profile id of the owner of the campaign
     ///@param _publicationId pubId of the post of the campaign
-    ///@param _userId profile id of the owner of the campaign
     ///@param _campaingDuration duration of the campaign
     ///@param _postPayout payout per post
     ///@param _maxPostPayout budget of payouts per post
@@ -97,7 +97,7 @@ contract CampaignManager {
         addressesCampaign[_adProfileId][_publicationId] = address(campaign);
         addressesCampaignAd.push(address(campaign));
 
-        emit CampaignCreated(address(campaign), _userId);
+        emit CampaignCreated(address(campaign), _adProfileId);
     }
 
     ///@notice function to change governance address
