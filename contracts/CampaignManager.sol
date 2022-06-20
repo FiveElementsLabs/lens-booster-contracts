@@ -111,6 +111,19 @@ contract CampaignManager {
         emit CampaignCreated(address(campaign), _adProfileId);
     }
 
+    ///@notice remove expired campaigns
+    function removeExpiredCampaigns() external {
+        for (uint256 i = 0; i < addressesCampaignAd.length; i++) {
+            if (addressesCampaignAd[i] == msg.sender) {
+                addressesCampaignAd[i] = addressesCampaignAd[
+                    addressesCampaignAd.length - 1
+                ];
+                addressesCampaignAd.pop();
+                break;
+            }
+        }
+    }
+
     ///@notice function to change governance address
     ///@param _governance new governance address
     function changeGovernance(address _governance) external onlyGov {

@@ -149,13 +149,14 @@ contract LensCampaign is ILensCampaign {
 
     ///@notice modifier to check if the campaign is not expired
     modifier notExpired() {
-        require(
+        if (
             campaign.campaignInfo.campaignDuration +
                 campaign.campaignInfo.startCampaign >=
-                block.timestamp,
-            "LensCampaign::notExpired: Time expired for campaign"
-        );
-        _;
+            block.timestamp
+        ) _;
+
+        campaignManager.removeExpiredCampaigns();
+        require(false, "LensCampaign::notExpired: Time expired for campaign");
     }
 
     ///@dev return 1- click already payed, 2- action already payed
@@ -308,13 +309,13 @@ contract LensCampaign is ILensCampaign {
 
     ///@notice function that increment the count of the clicks obtained by one inflenser
     ///@param _profileId profile id of the inflenser
-    function handleClick(uint256 _profileId) external onlyGov {
+    function handleClick(uint256 _profileId) external onlyGov notExpired {
         inflenser.toBePayed.clickCountsToBePayed[_profileId]++;
     }
 
     ///@notice function that increment the count of the actions obtained by one inflenser
     ///@param _profileId profile id of the inflenser
-    function handleAction(uint256 _profileId) external onlyGov {
+    function handleAction(uint256 _profileId) external onlyGov notExpired {
         inflenser.toBePayed.actionCountsToBePayed[_profileId]++;
     }
 
