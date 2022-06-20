@@ -32,5 +32,9 @@ export default {
         url: "https://polygon-mainnet.g.alchemy.com/v2/OPgFJmubIEHEVanbQZQTswXK98J2vu8C",
       },
     },
+    polygon: {
+      url: "https://polygon-mainnet.g.alchemy.com/v2/OPgFJmubIEHEVanbQZQTswXK98J2vu8C",
+      //accounts: ["PVT_KEY"], adding your private key here for the account to be used
+    },
   },
 };

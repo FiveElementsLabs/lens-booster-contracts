@@ -9,5 +9,5 @@ pragma solidity ^0.8.10;
 interface ICampaignManager {
     function governance() external returns (address _governance);
 
-    function idBooster(uint256) external returns (uint256);
+    function inflencerId(uint256) external returns (uint256);
 }
