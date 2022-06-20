@@ -94,6 +94,17 @@ contract CampaignManager {
             address(campaign) != address(0),
             "CampaignManager::createCampaign: campaign not created"
         );
+        require(
+            ERC20(_asset).transferFrom(
+                msg.sender,
+                address(this),
+                _maxPostPayout + _maxClickPayout + _maxActionPayout
+            )
+        );
+        campaign.depositBudget(
+            _maxPostPayout + _maxClickPayout + _maxActionPayout
+        );
+        require(ERC20(_asset).balanceOf(address(campaign)) != 0);
         addressesCampaign[_adProfileId][_publicationId] = address(campaign);
         addressesCampaignAd.push(address(campaign));
 
