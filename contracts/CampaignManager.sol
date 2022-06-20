@@ -3,7 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {ERC20} from "./libraries/ERC20.sol";
-import "./mocked/LensCampaignMocked.sol";
+import "./LensCampaign.sol";
 
 /**
  * @title Contract that saves profiles and scores
