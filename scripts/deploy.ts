@@ -13,11 +13,6 @@ async function main() {
     "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
   );
 
-  // const ManagerFactory = await hre.ethers.getContractFactory("CampaignManager");
-  // const Manager = await ManagerFactory.deploy(deployer.address);
-
-  // await Manager.deployed();
-
   const Manager = await ethers.getContractAt(
     "CampaignManager",
     "0x4F6579cEE9D7b0eE1018F92b0dE4256d18D36Ef9"
@@ -35,7 +30,6 @@ async function main() {
     0, // action payout
     100000000000 // max action payout
   );
-  console.log("tx: ", tx.hash);
   await tx.wait();
 
   const Campaign = await ethers.getContractAt(
@@ -47,95 +41,14 @@ async function main() {
 
   const tx2 = await Campaign.depositBudget(1e6);
 
+  console.log(`Manager address: ${Manager.address}`);
+  console.log(`Campaign address: ${await Manager.addressesCampaignAd(0)}`);
+
   return {
     campaign: [await Manager.addressesCampaignAd(0)],
     manager: Manager.address,
   };
 }
-
-async function setStatsRand(res: any) {
-  const campaignAddress = res.campaign;
-  const accounts = await hre.ethers.getSigners();
-  const deployer = accounts[0];
-  let nonce = await ethers.provider.getTransactionCount(deployer.address);
-
-  for (let i = 0; i < campaignAddress.length; i++) {
-    const Campaing = await ethers.getContractAt(
-      "LensCampaignMocked",
-      campaignAddress[i]
-    );
-
-    let tx;
-    for (let i = 0; i < 5; i++) {
-      tx = await Campaing.modifyProfileArray(i, { nonce, gasLimit: 2000000 });
-      console.log("modifyProfileArray", tx.hash);
-      await tx.wait();
-      console.log(`Adding ${i} to campaing. Nonce: ${nonce}`);
-      nonce++;
-      nonce = await addClicks(
-        Math.ceil(Math.random() * 100),
-        Campaing,
-        i,
-        nonce
-      );
-
-      nonce = await addActions(
-        Math.ceil(Math.random() * 100),
-        Campaing,
-        i,
-        nonce
-      );
-    }
-  }
-  console.log("Manager: ", res.manager);
-
-  return {
-    campaign: campaignAddress,
-    manager: res.address,
-  };
-}
-
-const addClicks = async (
-  nClicks: any,
-  Campaing: any,
-  profileId: any,
-  nonce: number
-) => {
-  let tx;
-  for (let i = 0; i < nClicks; i++) {
-    tx = await Campaing.handleClickMocked(profileId, {
-      nonce,
-      gasLimit: 2000000,
-    });
-    console.log("handleClick", tx.hash);
-    await tx.wait();
-    console.log(`Adding to ${profileId}: ${nClicks} clicks. Nonce: ${nonce}`);
-    ++nonce;
-  }
-  return nonce;
-};
-
-const addActions = async (
-  nActions: any,
-  Campaing: any,
-  profileId: any,
-  nonce: number
-) => {
-  let tx;
-  for (let i = 0; i < nActions; i++) {
-    tx = await Campaing.handleActionMocked(profileId, {
-      nonce,
-      gasLimit: 2000000,
-    });
-    console.log("handleAction", tx.hash);
-    await tx.wait();
-    console.log(`Adding to ${profileId}: ${nActions} clicks. Nonce: ${nonce}`);
-
-    ++nonce;
-  }
-
-  return nonce;
-};
 
 const whitelist = async () => {
   const accounts = hre.ethers.getSigners();
