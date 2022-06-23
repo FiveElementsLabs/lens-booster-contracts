@@ -103,21 +103,7 @@ const payForClick = async () => {
   const tx = await campaign.payForClick("0x2fb4", 1, { gasLimit: 2000000 });
 };
 
-const test = async () => {
-  const accounts = await hre.ethers.getSigners();
-  const deployer = accounts[0];
-
-  const campaign = await ethers.getContractAt(
-    "LensCampaign",
-    "0x164785d43c7881C70ce1cdd2de80c3C5265AfaB2"
-  );
-
-  const res = await campaign.handleAction(12212);
-  console.log(res);
-};
-
 main().then((res) => console.log(res));
 //whitelist();
-//test();
 //withdraw
 //payForClick();
