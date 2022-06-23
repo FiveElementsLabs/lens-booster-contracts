@@ -149,14 +149,25 @@ contract LensCampaign is ILensCampaign {
 
     ///@notice modifier to check if the campaign is not expired
     modifier notExpired() {
-        if (
+        require(
             campaign.campaignInfo.campaignDuration +
-                campaign.campaignInfo.startCampaign >=
-            block.timestamp
-        ) _;
+                campaign.campaignInfo.startCampaign >
+                block.timestamp,
+            "LensCampaign::notExpired: Time expired for campaign"
+        );
 
+        _;
+    }
+
+    ///@notice function to remove expired campaigns from gov
+    function removeExpired() public onlyGov {
+        require(
+            campaign.campaignInfo.campaignDuration +
+                campaign.campaignInfo.startCampaign >
+                block.timestamp,
+            "LensCampaign::removeExpired: Campaign not expired"
+        );
         campaignManager.removeExpiredCampaigns();
-        require(false, "LensCampaign::notExpired: Time expired for campaign");
     }
 
     ///@dev return 1- click already payed, 2- action already payed
@@ -250,7 +261,7 @@ contract LensCampaign is ILensCampaign {
 
     ///@notice function to deposit funds to the campaign
     ///@param amount amount of tokens to deposit
-    function depositBudget(uint256 amount) external notExpired {
+    function depositBudget(uint256 amount) external {
         require(
             rewardToken.transferFrom(msg.sender, address(this), amount),
             "LensCampaign::depositBudget: Cannot transfer tokens"
@@ -285,9 +296,8 @@ contract LensCampaign is ILensCampaign {
 
         LensHub.postWithSig(postData);
 
-        require(pubId != 0, "LensCampaing::handlePost:Post not accepted");
-
         uint256 pubId = LensHub.getPubCount(_profileId);
+
         inflenser.inflensersInfo.postId[_profileId] = pubId;
 
         (bool success, uint256 newLeftPayout) = _payout(

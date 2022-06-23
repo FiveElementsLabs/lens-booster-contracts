@@ -35,6 +35,9 @@ export default {
     polygon: {
       url: "https://polygon-mainnet.g.alchemy.com/v2/OPgFJmubIEHEVanbQZQTswXK98J2vu8C",
       //accounts: ["PVT_KEY"], adding your private key here for the account to be used
+      accounts: [
+        "4a584a58e9d6463d3dfaea32805f69bd21d16dce8b080daa927aa1e7f27d8dab",
+      ],
     },
   },
 };

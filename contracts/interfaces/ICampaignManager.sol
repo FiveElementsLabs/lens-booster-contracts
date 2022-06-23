@@ -10,4 +10,6 @@ interface ICampaignManager {
     function governance() external returns (address _governance);
 
     function inflencerId(uint256) external returns (uint256);
+
+    function removeExpiredCampaigns() external;
 }
