@@ -76,7 +76,7 @@ contract CampaignManager {
         uint256 _actionPayout,
         uint256 _maxActionPayout
     ) external {
-        LensCampaignMocked campaign = new LensCampaignMocked(
+        LensCampaign campaign = new LensCampaign(
             msg.sender,
             _asset,
             address(this),
@@ -99,8 +99,20 @@ contract CampaignManager {
                 msg.sender,
                 address(this),
                 _maxPostPayout + _maxClickPayout + _maxActionPayout
-            )
+            ),
+            "CampaignManager::createCampaign: Not enough tokens"
         );
+
+        require(
+            ERC20(_asset).balanceOf(address(this)) != 0,
+            "CampaignManager::createCampaign: CampaignManager must have tokens"
+        );
+
+        ERC20(_asset).approve(
+            address(campaign),
+            _maxPostPayout + _maxClickPayout + _maxActionPayout
+        );
+
         campaign.depositBudget(
             _maxPostPayout + _maxClickPayout + _maxActionPayout
         );
